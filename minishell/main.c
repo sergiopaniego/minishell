@@ -14,7 +14,7 @@ int main(void) {
 	char buf[1024];
 	tline * line;
 	int i,j;
-
+        
 	printf("minishell ==> ");	
 	while (fgets(buf, 1024, stdin)) {
 		
@@ -24,6 +24,7 @@ int main(void) {
 		}
 		if (line->redirect_input != NULL) {
 			printf("redirección de entrada: %s\n", line->redirect_input);
+                        
 		}
 		if (line->redirect_output != NULL) {
 			printf("redirección de salida: %s\n", line->redirect_output);
@@ -49,7 +50,7 @@ int main(void) {
 			exit(1);
 		}
 		else if (pid == 0) { /* Proceso Hijo */
-			execvp(line->commands[0].argv[1], line->commands[0].argv[2]);
+			execvp(line->commands[0].filename, line->commands[0].argv);
 			//Si llega aquí es que se ha producido un error en el execvp
 			printf("Error al ejecutar el comando: %s\n", strerror(errno));
 			exit(1);
