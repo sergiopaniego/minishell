@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <string.h>
 #include "parser.h"
+//#include "libparser_64.a"
 
 
 
