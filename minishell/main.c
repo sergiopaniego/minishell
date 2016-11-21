@@ -31,6 +31,8 @@ int main(void) {
                 while (fgets(buf, 1024, fp) != NULL) {
                     strcat(newargv,buf);
                 }
+                
+                line->commands[0].argc++;
                 line->commands[0].argv[1]=newargv;
             }
             if (line->redirect_output != NULL) {
@@ -49,6 +51,7 @@ int main(void) {
                 }
             }
 
+            if (line->ncommands==1){
             pid = fork();
             if (pid < 0) { /* Error */
                 fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
@@ -70,7 +73,51 @@ int main(void) {
                         printf("El comando no se ejecutó correctamente\n");
                 exit(0);
             }
+            }else{
+            
+            //Creo el pipe
+            int p[2];
+            int pid1, pid2;
+
+            pipe(p);
+
+            pid1=fork();
+
+            if (pid < 0) { /* Error */
+                fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
+                exit(1);
+            }else if(pid1==0){//Hijo1
+                close(p[0]);
+                dup2(p[1], 1);//Entrada del pipe y salida estándar
+                //Si hago close de p[1] no se tiene por que cerrar la salida 1
+                execvp(line->commands[0].filename, line->commands[0].argv);
+                //Si llega aquí es que se ha producido un error en el execvp
+                printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                exit(1);
+
+            } else { /* Proceso Padre. */
+                pid2=fork();
+                if(pid2==0){//Hijo2
+                    close(p[1]);
+                    dup2(p[0], 0);
+                    execvp(line->commands[1].filename, line->commands[1].argv);
+                }else{//Padre
+                    close(p[0]);
+                    close(p[1]);
+                    /*- WIFEXITED(estadoHijo) es 0 si el hijo ha terminado de una manera anormal (caida, matado con un kill, etc). 
+                    Distinto de 0 si ha terminado porque ha hecho una llamada a la función exit()
+                    - WEXITSTATUS(estadoHijo) devuelve el valor que ha pasado el hijo a la función exit(), siempre y cuando la 
+                    macro anterior indique que la salida ha sido por una llamada a exit(). */
+                    wait(&status);
+                    if (WIFEXITED(status) != 0)
+                        if (WEXITSTATUS(status) != 0)
+                            printf("El comando no se ejecutó correctamente\n");
+                    exit(0);
+
+                }
+            }
             printf("minishell ==> ");
+        }
         }
     }
     return 0;
