@@ -52,52 +52,57 @@ int main(void) {
 
         if (line->ncommands == 1) {
             int pid;
-            pid = fork();
-            if (pid < 0) { /* Error */
-                fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
-                exit(1);
-            } else if (pid == 0) { /* Proceso Hijo */
-                char st[] = "cd";
-                if (strcmp(line->commands[0].argv[0], st) == 0) {
-                    char *dir;
-                    char buffer[512];
+            char st[] = "cd";
+            if (strcmp(line->commands[0].argv[0], st) == 0) {
+                char *dir;
+                char buffer[512];
 
-                    if (line->commands[0].argc > 2) {
-                        fprintf(stderr, "Uso: %s directorio\n", line->commands[0].argv[0]);
-                        return 1;
+                if (line->commands[0].argc > 2) {
+                    fprintf(stderr, "Uso: %s directorio\n", line->commands[0].argv[1]);
+                }
+
+                if (line->commands[0].argc == 1) {
+                    dir = getenv("HOME");
+                    if (dir == NULL) {
+                        fprintf(stderr, "No existe la variable $HOME\n");
                     }
-
-                    if (line->commands[0].argc == 1) {
-                        dir = getenv("HOME");
-                        if (dir == NULL) {
-                            fprintf(stderr, "No existe la variable $HOME\n");
-                        }
-                    } else {
+                } else {
+                    char aux[]="$HOME";
+                    if(strcmp(line->commands[0].argv[1],aux)==0){
+                        dir=getenv("HOME");
+                    }else{
                         dir = line->commands[0].argv[1];
                     }
-
-                    // Comprobar si es un directorio
-                    if (chdir(dir) != 0) {
-                        fprintf(stderr, "Error al cambiar de directorio: %s\n", strerror(errno));
-                    }
-                    printf("El directorio actual es: %s\n", getcwd(buffer, -1));
-                    exit(0);
+                   
                 }
-                execvp(line->commands[0].filename, line->commands[0].argv);
 
-                //Si llega aquí es que se ha producido un error en el execvp
-                printf("Error al ejecutar el comando: %s\n", strerror(errno));
-                exit(1);
+                // Comprobar si es un directorio
+                if (chdir(dir) != 0) {
+                    fprintf(stderr, "Error al cambiar de directorio: %s\n", strerror(errno));
+                }
+                printf("El directorio actual es: %s\n", getcwd(buffer, -1));
+            } else {
+                pid = fork();
+                if (pid < 0) { /* Error */
+                    fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
+                    exit(1);
+                } else if (pid == 0) { /* Proceso Hijo */
+                    execvp(line->commands[0].filename, line->commands[0].argv);
 
-            } else { /* Proceso Padre. 
+                    //Si llega aquí es que se ha producido un error en el execvp
+                    printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                    exit(1);
+
+                } else { /* Proceso Padre. 
                 - WIFEXITED(estadoHijo) es 0 si el hijo ha terminado de una manera anormal (caida, matado con un kill, etc). 
                 Distinto de 0 si ha terminado porque ha hecho una llamada a la función exit()
                 - WEXITSTATUS(estadoHijo) devuelve el valor que ha pasado el hijo a la función exit(), siempre y cuando la 
                 macro anterior indique que la salida ha sido por una llamada a exit(). */
-                wait(&status);
-                if (WIFEXITED(status) != 0)
-                    if (WEXITSTATUS(status) != 0)
-                        printf("El comando no se ejecutó correctamente\n");
+                    wait(&status);
+                    if (WIFEXITED(status) != 0)
+                        if (WEXITSTATUS(status) != 0)
+                            printf("El comando no se ejecutó correctamente\n");
+                }
             }
         } else {
 
