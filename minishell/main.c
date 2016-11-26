@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
 #include "parser.h"
 
 int main(void) {
@@ -15,30 +16,58 @@ int main(void) {
     while (fgets(buf, 1024, stdin)) {
 
         line = tokenize(buf);
-        //pid_t pid;
         int status;
         if (line == NULL) {
             continue;
         }
         if (line->redirect_input != NULL) {
-            char* newargv;
-            newargv = (char *) malloc(1024 * sizeof (char));
-            FILE *fp;
-            fp = fopen(line->redirect_input, "r");
             printf("redirección de entrada: %s\n", line->redirect_input);
 
-            while (fgets(buf, 1024, fp) != NULL) {
-                strcat(newargv, buf);
-            }
 
-            line->commands[0].argc++;
-            line->commands[0].argv[1] = newargv;
+            //First, we're going to open a file
+            int file = open(line->redirect_input, O_WRONLY);
+            if (file < 0) return 1;
+
+            //Now we redirect standard input to the file using dup2
+            dup2(0,7);
+            dup2(file, 0);
+
+            //At the end the file has to be closed:
+            close(file);
+            
+
         }
         if (line->redirect_output != NULL) {
+            
             printf("redirección de salida: %s\n", line->redirect_output);
+
+            //First, we're going to open a file
+            int file = open(line->redirect_output, O_WRONLY);
+            if (file < 0) return 1;
+
+            //Now we redirect standard output to the file using dup2
+            dup2(1,8);
+            dup2(file, 1);
+
+            //At the end the file has to be closed:
+            close(file); 
+            
+            
         }
         if (line->redirect_error != NULL) {
             printf("redirección de error: %s\n", line->redirect_error);
+            
+            //First, we're going to open a file
+            int file = open(line->redirect_error, O_WRONLY);
+            if (file < 0) return 1;
+
+            //Now we redirect standard output error to the file using dup2
+            dup2(2,9);
+            dup2(file, 2);
+
+            //At the end the file has to be closed:
+            close(file);
+            
         }
         if (line->background) {
             printf("comando a ejecutarse en background\n");
@@ -67,13 +96,13 @@ int main(void) {
                         fprintf(stderr, "No existe la variable $HOME\n");
                     }
                 } else {
-                    char aux[]="$HOME";
-                    if(strcmp(line->commands[0].argv[1],aux)==0){
-                        dir=getenv("HOME");
-                    }else{
+                    char aux[] = "$HOME";
+                    if (strcmp(line->commands[0].argv[1], aux) == 0) {
+                        dir = getenv("HOME");
+                    } else {
                         dir = line->commands[0].argv[1];
                     }
-                   
+
                 }
 
                 // Comprobar si es un directorio
@@ -150,6 +179,9 @@ int main(void) {
 
         }
         printf("minishell ==> ");
+        dup2(7,0);//Devolvemos la entrada estandar a la consola
+        dup2(8,1);//Devolvemos la salida estandar a la consola
+        dup2(9,2);//Devolvemos la salida de errores a la consola
     }
     return 0;
 }
