@@ -37,7 +37,7 @@ int main(void) {
             
 
         }
-        if (line->redirect_output != NULL) {
+        else if (line->redirect_output != NULL) {
             
             printf("redirección de salida: %s\n", line->redirect_output);
 
@@ -53,8 +53,65 @@ int main(void) {
             close(file); 
             
             
+            //Creo el pipe
+            int p[2];
+            int pid1, pid2;
+
+            pipe(p);
+
+            pid1 = fork();
+
+            if (pid1 < 0) { /* Error */
+                fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
+                exit(1);
+            } else if (pid1 == 0) {//Hijo1
+                close(p[0]);
+                dup2(file,p[1]);
+                dup2(p[1], 1); //Entrada del pipe y salida estándar
+                //Si hago close de p[1] no se tiene por que cerrar la salida 1
+                execvp(line->commands[0].filename, line->commands[0].argv);
+                //Si llega aquí es que se ha producido un error en el execvp
+                printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                exit(1);
+
+            } else { /* Proceso Padre. */
+               
+                pid2 = fork();
+                if (pid2 == 0) {//Hijo2
+                    close(p[1]);
+                    dup2(p[0], 0);
+                    execvp(line->commands[1].filename, line->commands[1].argv);
+                } else {//Padre
+                    close(p[0]);
+                    close(p[1]);
+                    /*- WIFEXITED(estadoHijo) es 0 si el hijo ha terminado de una manera anormal (caida, matado con un kill, etc). 
+                    Distinto de 0 si ha terminado porque ha hecho una llamada a la función exit()
+                    - WEXITSTATUS(estadoHijo) devuelve el valor que ha pasado el hijo a la función exit(), siempre y cuando la 
+                    macro anterior indique que la salida ha sido por una llamada a exit(). */
+                    wait(&status);
+                    if (WIFEXITED(status) != 0)
+                        if (WEXITSTATUS(status) != 0)
+                            printf("El comando no se ejecutó correctamente\n");
+                }
+
+            }
+            
+            
+            
+ 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
         }
-        if (line->redirect_error != NULL) {
+        else if (line->redirect_error != NULL) {
             printf("redirección de error: %s\n", line->redirect_error);
             
             //First, we're going to open a file
@@ -69,9 +126,9 @@ int main(void) {
             close(file);
             
         }
-        if (line->background) {
+        else if (line->background) {
             printf("comando a ejecutarse en background\n");
-        }
+        } else{
         for (i = 0; i < line->ncommands; i++) {
             printf("orden %d (%s):\n", i, line->commands[i].filename);
             for (j = 0; j < line->commands[i].argc; j++) {
@@ -172,16 +229,20 @@ int main(void) {
                     if (WIFEXITED(status) != 0)
                         if (WEXITSTATUS(status) != 0)
                             printf("El comando no se ejecutó correctamente\n");
-
                 }
 
             }
 
         }
+
+        }
+
+        //dup2(7,0);//Devolvemos la entrada estandar a la consola
+        dup2(8,1);//Devolvemos la salida estandar a la consola 
+        sleep(1);
+        //dup2(9,2);//Devolvemos la salida de errores a la consola
         printf("minishell ==> ");
-        dup2(7,0);//Devolvemos la entrada estandar a la consola
-        dup2(8,1);//Devolvemos la salida estandar a la consola
-        dup2(9,2);//Devolvemos la salida de errores a la consola
     }
+
     return 0;
 }
