@@ -35,14 +35,13 @@ int main(void) {
             int i;
 
             scanf("%s %d", str, &i);
-
+            
             char ** result = (char**) malloc(2 * sizeof (char*));
-            for (i = 0; i < 2; i++) {
-                result[i] = (char*) malloc(1024 * sizeof (char));
-            }
-
-            strcpy(result[0], line->commands[0].filename);
+            result[0] = (char*) malloc(1024 * sizeof (char));
+            result[1] = (char*) malloc(1024 * sizeof (char));
+            strcpy(result[0], line->commands[0].argv[0]);
             strcpy(result[1], str);
+            
             /*char * pch;
             printf("Splitting string \"%s\" into tokens:\n", str);
             pch = strtok(str, " ");
@@ -52,28 +51,28 @@ int main(void) {
             }*/
             printf("You entered: %s  \n", result[0]);
 
-            if (line->ncommands == 1) {
+            if (result[0]!=NULL) {
                 int pid;
                 char st[] = "cd";
-                if (strcmp(line->commands[0].argv[0], st) == 0) {
+                if (strcmp(result[0], st) == 0) {
                     char *dir;
                     char buffer[512];
 
-                    if (line->commands[0].argc > 2) {
+                    /*if (result[0] > 2) {
                         fprintf(stderr, "Uso: %s directorio\n", line->commands[0].argv[1]);
-                    }
+                    }*/
 
-                    if (line->commands[0].argc == 1) {
+                    if (result[1] ==NULL) {
                         dir = getenv("HOME");
                         if (dir == NULL) {
                             fprintf(stderr, "No existe la variable $HOME\n");
                         }
                     } else {
                         char aux[] = "$HOME";
-                        if (strcmp(line->commands[0].argv[1], aux) == 0) {
+                        if (strcmp(result[1], aux) == 0) {
                             dir = getenv("HOME");
                         } else {
-                            dir = line->commands[0].argv[1];
+                            dir = result[1];
                         }
 
                     }
@@ -84,6 +83,7 @@ int main(void) {
                     }
                     printf("El directorio actual es: %s\n", getcwd(buffer, -1));
                 } else {
+                    
                     pid = fork();
                     if (pid < 0) { /* Error */
                         fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
@@ -147,7 +147,7 @@ int main(void) {
                                 printf("El comando no se ejecutó correctamente\n");
                     }
                 }
-                for (i = 0; i < 1; i++) {
+                for (i = 0; i < 2; i++) {
                     free(result[i]);
                 }
                 free(result);
@@ -509,9 +509,9 @@ int main(void) {
         dup2(7, 0); //Devolvemos la entrada estandar a la consola
         dup2(8, 1); //Devolvemos la salida estandar a la consola 
         dup2(9, 2); //Devolvemos la salida de errores a la consola
-        sleep(1);
         printf("minishell ==> ");
     }
 
     return 0;
 }
+
