@@ -154,7 +154,7 @@ int main(void) {
             }
             //At the end the file has to be closed:
             close(file);
-        } else if (line->redirect_output != NULL) {
+        } if (line->redirect_output != NULL) {
             printf("redirección de salida: %s\n", line->redirect_output);
 
             //First, we're going to open a file
@@ -280,7 +280,7 @@ int main(void) {
 
 
 
-        } else if (line->redirect_error != NULL) {
+        } if (line->redirect_error != NULL) {
             printf("redirección de error: %s\n", line->redirect_error);
 
             //First, we're going to open a file
@@ -290,7 +290,7 @@ int main(void) {
             //Now we redirect standard output to the file using dup2
             dup2(1, 8);
             dup2(file, 1);
-
+            
             dup2(2, 9);
             dup2(file, 2);
 
@@ -395,9 +395,9 @@ int main(void) {
             //At the end the file has to be closed:
             close(file);
 
-        } else if (line->background) {
+        } if (line->background) {
             printf("comando a ejecutarse en background\n");
-        } else {
+        }
             for (i = 0; i < line->ncommands; i++) {
                 printf("orden %d (%s):\n", i, line->commands[i].filename);
                 for (j = 0; j < line->commands[i].argc; j++) {
@@ -442,7 +442,7 @@ int main(void) {
                         fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
                         exit(1);
                     } else if (pid == 0) { /* Proceso Hijo */
-                        execvp(line->commands[0].filename, line->commands[0].argv);
+                        execvp(line->commands[0].argv[0], line->commands[0].argv);
 
                         //Si llega aquí es que se ha producido un error en el execvp
                         printf("Error al ejecutar el comando: %s\n", strerror(errno));
@@ -476,7 +476,7 @@ int main(void) {
                     close(p[0]);
                     dup2(p[1], 1); //Entrada del pipe y salida estándar
                     //Si hago close de p[1] no se tiene por que cerrar la salida 1
-                    execvp(line->commands[0].filename, line->commands[0].argv);
+                    execvp(line->commands[0].argv[0], line->commands[0].argv);
                     //Si llega aquí es que se ha producido un error en el execvp
                     printf("Error al ejecutar el comando: %s\n", strerror(errno));
                     exit(1);
@@ -486,7 +486,7 @@ int main(void) {
                     if (pid2 == 0) {//Hijo2
                         close(p[1]);
                         dup2(p[0], 0);
-                        execvp(line->commands[1].filename, line->commands[1].argv);
+                        execvp(line->commands[1].argv[0], line->commands[1].argv);
                     } else {//Padre
                         close(p[0]);
                         close(p[1]);
@@ -504,7 +504,6 @@ int main(void) {
 
             }
 
-        }
 
         dup2(7, 0); //Devolvemos la entrada estandar a la consola
         dup2(8, 1); //Devolvemos la salida estandar a la consola 
