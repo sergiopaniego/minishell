@@ -31,48 +31,28 @@ int main(void) {
             dup2(0, 7);
             dup2(file, 0);
 
-            char str[100];
-            int i;
-
-            scanf("%s %d", str, &i);
-            
-            char ** result = (char**) malloc(2 * sizeof (char*));
-            result[0] = (char*) malloc(1024 * sizeof (char));
-            result[1] = (char*) malloc(1024 * sizeof (char));
-            strcpy(result[0], line->commands[0].argv[0]);
-            strcpy(result[1], str);
-            
-            /*char * pch;
-            printf("Splitting string \"%s\" into tokens:\n", str);
-            pch = strtok(str, " ");
-            while (pch != NULL) {
-                result[0]=pch;
-                pch = strtok(NULL, " ");
-            }*/
-            printf("You entered: %s  \n", result[0]);
-
-            if (result[0]!=NULL) {
+            if (line->ncommands == 1) {
                 int pid;
                 char st[] = "cd";
-                if (strcmp(result[0], st) == 0) {
+                if (strcmp(line->commands[0].argv[0], st) == 0) {
                     char *dir;
                     char buffer[512];
 
-                    /*if (result[0] > 2) {
+                    if (line->commands[0].argc > 2) {
                         fprintf(stderr, "Uso: %s directorio\n", line->commands[0].argv[1]);
-                    }*/
+                    }
 
-                    if (result[1] ==NULL) {
+                    if (line->commands[0].argc == 1) {
                         dir = getenv("HOME");
                         if (dir == NULL) {
                             fprintf(stderr, "No existe la variable $HOME\n");
                         }
                     } else {
                         char aux[] = "$HOME";
-                        if (strcmp(result[1], aux) == 0) {
+                        if (strcmp(line->commands[0].argv[1], aux) == 0) {
                             dir = getenv("HOME");
                         } else {
-                            dir = result[1];
+                            dir = line->commands[0].argv[1];
                         }
 
                     }
@@ -83,13 +63,12 @@ int main(void) {
                     }
                     printf("El directorio actual es: %s\n", getcwd(buffer, -1));
                 } else {
-                    
                     pid = fork();
                     if (pid < 0) { /* Error */
                         fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
                         exit(1);
                     } else if (pid == 0) { /* Proceso Hijo */
-                        execvp(line->commands[0].filename, result);
+                        execvp(line->commands[0].filename, line->commands[0].argv);
 
                         //Si llega aquí es que se ha producido un error en el execvp
                         printf("Error al ejecutar el comando: %s\n", strerror(errno));
@@ -123,7 +102,7 @@ int main(void) {
                     close(p[0]);
                     dup2(p[1], 1); //Entrada del pipe y salida estándar
                     //Si hago close de p[1] no se tiene por que cerrar la salida 1
-                    execvp(line->commands[0].filename, line->commands[0].argv);
+                    execvp(line->commands[0].argv[0], line->commands[0].argv);
                     //Si llega aquí es que se ha producido un error en el execvp
                     printf("Error al ejecutar el comando: %s\n", strerror(errno));
                     exit(1);
@@ -146,11 +125,9 @@ int main(void) {
                             if (WEXITSTATUS(status) != 0)
                                 printf("El comando no se ejecutó correctamente\n");
                     }
+
                 }
-                for (i = 0; i < 2; i++) {
-                    free(result[i]);
-                }
-                free(result);
+
             }
             //At the end the file has to be closed:
             close(file);
@@ -202,10 +179,10 @@ int main(void) {
                         fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
                         exit(1);
                     } else if (pid == 0) { /* Proceso Hijo */
-                        execvp(line->commands[0].filename, line->commands[0].argv);
+                        execvp(line->commands[0].argv[0], line->commands[0].argv);
 
                         //Si llega aquí es que se ha producido un error en el execvp
-                        printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                        fprintf(stderr,"Error al ejecutar el comando: %s\n", strerror(errno));
                         exit(1);
 
                     } else { /* Proceso Padre. 
@@ -236,9 +213,9 @@ int main(void) {
                     close(p[0]);
                     dup2(p[1], 1); //Entrada del pipe y salida estándar
                     //Si hago close de p[1] no se tiene por que cerrar la salida 1
-                    execvp(line->commands[0].filename, line->commands[0].argv);
+                    execvp(line->commands[0].argv[0], line->commands[0].argv);
                     //Si llega aquí es que se ha producido un error en el execvp
-                    printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                    fprintf(stderr,"Error al ejecutar el comando: %s\n", strerror(errno));
                     exit(1);
 
                 } else { /* Proceso Padre. */
@@ -246,7 +223,7 @@ int main(void) {
                     if (pid2 == 0) {//Hijo2
                         close(p[1]);
                         dup2(p[0], 0);
-                        execvp(line->commands[1].filename, line->commands[1].argv);
+                        execvp(line->commands[1].argv[0], line->commands[1].argv);
                     } else {//Padre
                         close(p[0]);
                         close(p[1]);
@@ -265,21 +242,7 @@ int main(void) {
             }
             //At the end the file has to be closed:
             close(file);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            dup2(8, 1);
         } if (line->redirect_error != NULL) {
             printf("redirección de error: %s\n", line->redirect_error);
 
@@ -331,7 +294,7 @@ int main(void) {
                         fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
                         exit(1);
                     } else if (pid == 0) { /* Proceso Hijo */
-                        execvp(line->commands[0].filename, line->commands[0].argv);
+                        execvp(line->commands[0].argv[0], line->commands[0].argv);
 
                         //Si llega aquí es que se ha producido un error en el execvp
                         printf("Error al ejecutar el comando: %s\n", strerror(errno));
@@ -365,7 +328,7 @@ int main(void) {
                     close(p[0]);
                     dup2(p[1], 1); //Entrada del pipe y salida estándar
                     //Si hago close de p[1] no se tiene por que cerrar la salida 1
-                    execvp(line->commands[0].filename, line->commands[0].argv);
+                    execvp(line->commands[0].argv[0], line->commands[0].argv);
                     //Si llega aquí es que se ha producido un error en el execvp
                     printf("Error al ejecutar el comando: %s\n", strerror(errno));
                     exit(1);
@@ -375,7 +338,7 @@ int main(void) {
                     if (pid2 == 0) {//Hijo2
                         close(p[1]);
                         dup2(p[0], 0);
-                        execvp(line->commands[1].filename, line->commands[1].argv);
+                        execvp(line->commands[1].argv[0], line->commands[1].argv);
                     } else {//Padre
                         close(p[0]);
                         close(p[1]);
