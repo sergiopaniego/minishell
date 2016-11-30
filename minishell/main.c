@@ -8,12 +8,15 @@
 #include <fcntl.h>
 #include "parser.h"
 #include <assert.h>
+#include <signal.h>
 
 int main(void) {
     char buf[1024];
     tline * line;
     int i, j;
     printf("minishell ==> ");
+    signal(SIGINT,SIG_IGN);
+    signal(SIGQUIT,SIG_IGN);
     while (fgets(buf, 1024, stdin)) {
 
         line = tokenize(buf);
@@ -360,6 +363,8 @@ int main(void) {
 
         } if (line->background) {
             printf("comando a ejecutarse en background\n");
+            signal(SIGINT,SIG_IGN);
+            signal(SIGQUIT,SIG_IGN);
         }
             for (i = 0; i < line->ncommands; i++) {
                 printf("orden %d (%s):\n", i, line->commands[i].filename);
@@ -466,8 +471,8 @@ int main(void) {
                 }
 
             }
-
-
+        
+        
         dup2(7, 0); //Devolvemos la entrada estandar a la consola
         dup2(8, 1); //Devolvemos la salida estandar a la consola 
         dup2(9, 2); //Devolvemos la salida de errores a la consola
@@ -476,4 +481,5 @@ int main(void) {
 
     return 0;
 }
+
 
