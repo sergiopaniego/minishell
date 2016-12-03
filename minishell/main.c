@@ -18,7 +18,11 @@ int main(void) {
     int status;
 
     printf("minishell ==> ");
+    signal(SIGINT,SIG_IGN);
+    signal(SIGQUIT,SIG_IGN);
     while (fgets(buf, 1024, stdin)) {
+        signal(SIGINT,SIG_IGN);
+        signal(SIGQUIT,SIG_IGN);
 
         line = tokenize(buf);
         if (line == NULL) {
@@ -84,6 +88,8 @@ int main(void) {
 
         //El padre crea los hijos y conecta los pipes
         for (i = 0; i < line->ncommands; i++) {
+            signal(SIGINT,SIG_DFL);
+            signal(SIGQUIT,SIG_DFL);
             pid[i] = fork();
             if (pid[i] < 0) {
                 fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
@@ -154,6 +160,8 @@ int main(void) {
         }
         if (line->background) {
             printf("comando a ejecutarse en background\n");
+            signal(SIGINT,SIG_IGN);
+            signal(SIGQUIT,SIG_IGN);
             for (i = 0; i < line->ncommands; i++) {
                 waitpid(pid[i], &status, WNOHANG);
                 if (WIFEXITED(status) != 0)
