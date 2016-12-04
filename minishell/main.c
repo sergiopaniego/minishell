@@ -21,11 +21,10 @@ int main(void) {
     signal(SIGINT,SIG_IGN);
     signal(SIGQUIT,SIG_IGN);
     int counter=0;
-    char * backcommands[10];
-    //char ** backcommands = (char**) malloc(10 * sizeof (char*));
-        for (i = 0; i < 10; i++) {
-            backcommands[i] = (char*) malloc(1024 * sizeof (char));
-        }
+    int * backcommands[10];    
+    for (i = 0; i < 10; i++) {        
+        backcommands[i] = (int*) malloc(sizeof (int));
+    }
     while (fgets(buf, 1024, stdin)) {
         signal(SIGINT,SIG_IGN);
         signal(SIGQUIT,SIG_IGN);
@@ -168,25 +167,33 @@ int main(void) {
             printf("comando a ejecutarse en background\n");
             signal(SIGINT,SIG_IGN);
             signal(SIGQUIT,SIG_IGN);
-            *backcommands[counter]=1;
+            *backcommands[counter]=pid[0];
             //Saca la lista de comandos en ejecución y añade el nuevo a la lista
             i=0;
-            while(*backcommands[i]==1){
-                printf("Proceso [%i]: %i\n",i,pid[0]);
+            while(*backcommands[i]!=0){
+                printf("Proceso [%i]: %i\n",i,*backcommands[i]);
                 i++;
             }
-            counter++;
+
             for (i = 0; i < line->ncommands; i++) {
                 waitpid(pid[i], &status, WNOHANG);
-                if (WIFEXITED(status) != 0)
+                if (WIFEXITED(status) != 0){
                     if (WEXITSTATUS(status) != 0)
-                        printf("El comando no se ejecutó correctamente\n");
+                        printf("El comando no se ejecutó correctamente\n");                    
+                }else{
+                    if(i>=line->ncommands-1){
+                        for(i=counter; i<9; i++){
+                            backcommands[i]=backcommands[i+1];                           
+                        }
+                        *backcommands[9]=0;
+                    }
+                }
             }
+            counter++;
         } else {
             //El padre hace el waitpid por cada uno de los hijos
             for (i = 0; i < line->ncommands; i++) {
-                //waitpid(pid[i], &status, 0);
-                wait(&status);
+                waitpid(pid[i], &status, 0);
                 if (WIFEXITED(status) != 0)
                     if (WEXITSTATUS(status) != 0)
                         printf("El comando no se ejecutó correctamente\n");
