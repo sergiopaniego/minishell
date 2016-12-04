@@ -20,6 +20,12 @@ int main(void) {
     printf("minishell ==> ");
     signal(SIGINT,SIG_IGN);
     signal(SIGQUIT,SIG_IGN);
+    int counter=0;
+    char * backcommands[10];
+    //char ** backcommands = (char**) malloc(10 * sizeof (char*));
+        for (i = 0; i < 10; i++) {
+            backcommands[i] = (char*) malloc(1024 * sizeof (char));
+        }
     while (fgets(buf, 1024, stdin)) {
         signal(SIGINT,SIG_IGN);
         signal(SIGQUIT,SIG_IGN);
@@ -162,6 +168,14 @@ int main(void) {
             printf("comando a ejecutarse en background\n");
             signal(SIGINT,SIG_IGN);
             signal(SIGQUIT,SIG_IGN);
+            *backcommands[counter]=1;
+            //Saca la lista de comandos en ejecución y añade el nuevo a la lista
+            i=0;
+            while(*backcommands[i]==1){
+                printf("Proceso [%i]: %i\n",i,pid[0]);
+                i++;
+            }
+            counter++;
             for (i = 0; i < line->ncommands; i++) {
                 waitpid(pid[i], &status, WNOHANG);
                 if (WIFEXITED(status) != 0)
