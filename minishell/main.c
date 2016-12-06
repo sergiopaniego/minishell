@@ -155,7 +155,11 @@ int main(void) {
                             a++;
                         }
                         a = 0;
-                        for (i = 0; i <= counter; i++) {
+                        counter = 0;
+                        while (*backcommands[counter] != 0) {
+                            counter++;
+                        }
+                        for (i = 0; i < counter; i++) { 
                             waitpid(*backcommands[i], &status, WNOHANG);
                             if (WIFEXITED(status) != 0) {
                                 if (WEXITSTATUS(status) != 0) {
@@ -237,7 +241,7 @@ int main(void) {
                 }
             }*/
           
-            for (i = 0; i <= counter; i++) {
+            for (i = 0; i < counter; i++) {
                 waitpid(*backcommands[i], &status, WNOHANG);
                 if (WIFEXITED(status) != 0) {
                     printf("Proceso %i :ha terminado \n", *backcommands[i]);
