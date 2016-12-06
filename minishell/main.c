@@ -236,7 +236,7 @@ int main(void) {
                     
                 }
             }*/
-            int a;
+          
             for (i = 0; i <= counter; i++) {
                 waitpid(*backcommands[i], &status, WNOHANG);
                 if (WIFEXITED(status) != 0) {
@@ -244,7 +244,7 @@ int main(void) {
                     if (WEXITSTATUS(status) != 0) {
                         printf("El comando no se ejecutó correctamente\n");
                     }
-                    //int a = 0;
+                    int a = 0;
                     while (*backcommandsended[a] != 0) {
                         a++;
                     }
