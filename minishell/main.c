@@ -29,6 +29,11 @@ int main(void) {
     for (i = 0; i < 10; i++) {
         backcommandsended[i] = (int*) malloc(sizeof (int));
     }
+    char ** commandsname = (char**) malloc (10*sizeof(char*));
+    for (i = 0; i < 10; i++) {
+         commandsname[i] = (char*) malloc(1024*sizeof (char*));
+    }
+      
     while (fgets(buf, 1024, stdin)) {
         //signal(SIGINT, SIG_IGN);
         //signal(SIGQUIT, SIG_IGN);
@@ -144,12 +149,12 @@ int main(void) {
                     } else if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
                         i = 0;
                         while (*backcommands[i] != 0) {
-                            printf("[%i] Proceso: %i EXECUTING\n", i, *backcommands[i]);
+                            printf("[%i] Proceso: %i EXECUTING\t %s\n", i, *backcommands[i], commandsname[i]);
                             i++;
                         }
                         int a = 0;
                         while (*backcommandsended[a] != 0) {
-                            printf("[%i] Proceso: %i DONE\n", i, *backcommandsended[a]);
+                            printf("[%i] Proceso: %i DONE\t %s\n", i, *backcommandsended[a], commandsname[i]);
                             *backcommandsended[a] = 0;
                             i++;
                             a++;
@@ -212,7 +217,8 @@ int main(void) {
             //signal(SIGQUIT, SIG_IGN);
             /*for (i = 0; i < line->ncommands; i++) {
                 if (i >= line->ncommands - 1) {*/
-                    *backcommands[counter] = pid[0];
+                strcpy(commandsname[counter], line->commands->argv[0]);
+                *backcommands[counter] = pid[0];
                 /*}
             }*/
 
@@ -258,8 +264,6 @@ int main(void) {
                         *backcommands[a] = *backcommands[a + 1];
                     }
                     *backcommands[9] = 0;
-
-
                 }
             }
             counter = 0;
