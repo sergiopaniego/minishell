@@ -18,8 +18,8 @@ int main(void) {
     int status;
 
     printf("minishell ==> ");
-    signal(SIGINT, SIG_IGN);
-    signal(SIGQUIT, SIG_IGN);
+    //signal(SIGINT, SIG_IGN);
+    //signal(SIGQUIT, SIG_IGN);
     int counter = 0;
     int * backcommands[10];
     for (i = 0; i < 10; i++) {
@@ -30,8 +30,8 @@ int main(void) {
         backcommandsended[i] = (int*) malloc(sizeof (int));
     }
     while (fgets(buf, 1024, stdin)) {
-        signal(SIGINT, SIG_IGN);
-        signal(SIGQUIT, SIG_IGN);
+        //signal(SIGINT, SIG_IGN);
+        //signal(SIGQUIT, SIG_IGN);
 
         line = tokenize(buf);
         if (line == NULL) {
@@ -97,8 +97,8 @@ int main(void) {
 
         //El padre crea los hijos y conecta los pipes
         for (i = 0; i < line->ncommands; i++) {
-            signal(SIGINT, SIG_DFL);
-            signal(SIGQUIT, SIG_DFL);
+            //signal(SIGINT, SIG_DFL);
+            //signal(SIGQUIT, SIG_DFL);
             pid[i] = fork();
             if (pid[i] < 0) {
                 fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
@@ -150,11 +150,11 @@ int main(void) {
                         int a = 0;
                         while (*backcommandsended[a] != 0) {
                             printf("[%i] Proceso: %i DONE\n", i, *backcommandsended[a]);
-                            backcommandsended[a] = 0;
+                            *backcommandsended[a] = 0;
                             i++;
                             a++;
                         }
-                        a=0;
+                        a = 0;
                         for (i = 0; i <= counter; i++) {
                             waitpid(*backcommands[i], &status, WNOHANG);
                             if (WIFEXITED(status) != 0) {
@@ -162,14 +162,13 @@ int main(void) {
                                     printf("El comando no se ejecutó correctamente\n");
                                 }
                                 printf("Proceso %i :ha terminado\n", *backcommands[i]);
-                                while (backcommandsended[a] != 0) {
-                                    a++;
-                                }
-                                int a = 0;
+                               
+                                //int a = 0;
                                 while (*backcommandsended[a] != 0) {
                                     a++;
                                 }
                                 *backcommandsended[a] = *backcommands[i];
+                                *backcommands[i] = 0;
                                 for (a = i; a < 9; a++) {
                                     *backcommands[a] = *backcommands[a + 1];
                                 }
@@ -205,18 +204,18 @@ int main(void) {
         }
         if (line->background) {
             printf("comando a ejecutarse en background\n");
-            signal(SIGINT, SIG_IGN);
-            signal(SIGQUIT, SIG_IGN);
-            for (i = 0; i < line->ncommands; i++) {
-                if (i >= line->ncommands - 1) {
+            //signal(SIGINT, SIG_IGN);
+            //signal(SIGQUIT, SIG_IGN);
+            /*for (i = 0; i < line->ncommands; i++) {
+                if (i >= line->ncommands - 1) {*/
                     *backcommands[counter] = pid[0];
-                }
-            }
+                /*}
+            }*/
 
             //Saca la lista de comandos en ejecución y añade el nuevo a la lista
             i = 0;
             while (*backcommands[i] != 0) {
-                printf("Proceso [%i]: %i\n", i, *backcommands[i]);
+                printf("Proceso [%i]: %i en ejecución en background.\n", i, *backcommands[i]);
                 i++;
             }
 
@@ -224,7 +223,7 @@ int main(void) {
                 waitpid(pid[i], &status, WNOHANG);
                 if (WIFEXITED(status) != 0){
                     printf("Entra1\n");
-                    if (WEXITSTATUS(status) != 0)
+                    if (WEXITSTATUS(status) != 0){
                         printf("El comando no se ejecutó correctamente\n");
                     if(i>=line->ncommands-1){
                         printf("Entra2\n"); 
@@ -233,7 +232,7 @@ int main(void) {
                         }
              *backcommands[9]=0;
                     }
-                }else{                 
+                                 
                     
                 }
             }*/
@@ -241,18 +240,16 @@ int main(void) {
             for (i = 0; i <= counter; i++) {
                 waitpid(*backcommands[i], &status, WNOHANG);
                 if (WIFEXITED(status) != 0) {
+                    printf("Proceso %i :ha terminado \n", *backcommands[i]);
                     if (WEXITSTATUS(status) != 0) {
                         printf("El comando no se ejecutó correctamente\n");
                     }
-                    printf("Proceso %i :ha terminado\n", *backcommands[i]);
-                    while (backcommandsended[a] != 0) {
-                        a++;
-                    }
-                    int a = 0;
+                    //int a = 0;
                     while (*backcommandsended[a] != 0) {
                         a++;
                     }
                     *backcommandsended[a] = *backcommands[i];
+                    *backcommands[i] = 0;
                     for (a = i; a < 9; a++) {
                         *backcommands[a] = *backcommands[a + 1];
                     }
