@@ -217,7 +217,12 @@ int main(void) {
             //signal(SIGQUIT, SIG_IGN);
             /*for (i = 0; i < line->ncommands; i++) {
                 if (i >= line->ncommands - 1) {*/
-                strcpy(commandsname[counter], line->commands->argv[0]);
+            int k;
+            for(k=0; k<line->commands->argc; k++){
+                strcat(commandsname[counter], line->commands->argv[k]);
+                strcat(commandsname[counter], " ");
+            }
+                strcat(commandsname[counter], "&");
                 *backcommands[counter] = pid[0];
                 /*}
             }*/
