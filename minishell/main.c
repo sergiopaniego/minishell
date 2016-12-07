@@ -27,14 +27,20 @@ int main(void) {
     int * backcommands[10];
     for (i = 0; i < 10; i++) {
         backcommands[i] = (int*) malloc(sizeof (int));
+        *backcommands[i] = 0;
     }
     int * backcommandsended[10];
     for (i = 0; i < 10; i++) {
         backcommandsended[i] = (int*) malloc(sizeof (int));
+        *backcommandsended[i] = 0;
     }
-    char ** commandsname = (char**) malloc(10 * sizeof (char*));
+    char ** commandsname = (char**) malloc(40 * sizeof (char*));
     for (i = 0; i < 10; i++) {
         commandsname[i] = (char*) malloc(1024 * sizeof (char*));
+    }
+    char ** commandsnameended = (char**) malloc(40 * sizeof (char*));
+    for (i = 0; i < 10; i++) {
+        commandsnameended[i] = (char*) malloc(1024 * sizeof (char*));
     }
 
     while (fgets(buf, 1024, stdin)) {
@@ -107,6 +113,58 @@ int main(void) {
         for (i = 0; i < line->ncommands; i++) {
             //signal(SIGINT, SIG_DFL);
             //signal(SIGQUIT, SIG_DFL);
+            char st2[] = "jobs";
+                if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
+
+                        counter = 0;
+                        while (*backcommands[counter] != 0) {
+                            counter++;
+                        }
+                        counter--;
+                        int x = 0;
+                        while (*backcommands[x] != 0) {
+                            printf("[%i] Proceso: %i EXECUTING\t %s  \n", x, *backcommands[x], commandsname[x]);
+                            x++;
+                        }
+                        for (i = 0; i <= counter; i++) {
+                            //printf("%i \n",*backcommands[i]);
+
+                            pid_t finish;
+                            printf("%i \n", finish);
+                            finish = waitpid(*backcommands[i], &status, WNOHANG);
+
+
+                            printf("%i  %i  %i %i\n", i, counter, *backcommands[i], finish);
+                            if (finish == *backcommands[i]) {
+                                if (WIFEXITED(status) != 0) {
+                                    printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
+                                    if (WEXITSTATUS(status) != 0) {
+                                        printf("El comando no se ejecutó correctamente\n");
+                                    }
+                                    int a = 0;
+                                    while (*backcommandsended[a] != 0) {
+                                        a++;
+                                    }
+                                    *backcommandsended[a] = *backcommands[i];
+                                    strcpy(commandsnameended[a], commandsname[i]);
+                                    *backcommands[i] = 0;
+                                    for (a = i; a < 9; a++) {
+                                        *backcommands[a] = *backcommands[a + 1];
+                                    }
+                                    *backcommands[9] = 0;
+                                    counter--;
+                                }
+                            }
+                        }
+                        int a = 0;
+                        i = 0;
+                        while (*backcommandsended[a] != 0) {
+                            printf("[%i] Proceso: %i DONE\t %s\n", i, *backcommandsended[a], commandsnameended[a]);
+                            *backcommandsended[a] = 0;
+                            i++;
+                            a++;
+                        }
+                }
             pid[i] = fork();
             if (pid[i] < 0) {
                 fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
@@ -149,48 +207,8 @@ int main(void) {
                             fprintf(stderr, "Error al cambiar de directorio: %s\n", strerror(errno));
                         }
                         printf("El directorio actual es: %s\n", getcwd(buffer, -1));
-                    } else if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
-                        int a = 0;
-                        counter = 0;
-                        while (*backcommands[counter] != 0) {
-                            counter++;
-                        }
-                        int x;
-                        for (x = 0; x < counter; x++) {
-                            pid_t finish = waitpid(*backcommands[x], &status, WNOHANG);
-                            printf("%i\n", finish);
-                            if (finish>0) {
-                                if (WIFEXITED(status) != 0) {
-                                    if (WEXITSTATUS(status) != 0) {
-                                        printf("El comando no se ejecutó correctamente\n");
-                                    }
-                                    printf("Proceso %i :ha terminado %i\n", *backcommands[x],finish);
-
-                                    //int a = 0;
-                                    while (*backcommandsended[a] != 0) {
-                                        a++;
-                                    }
-                                    *backcommandsended[a] = *backcommands[x];
-                                    *backcommands[x] = 0;
-                                    for (a = x; a < 9; a++) {
-                                        *backcommands[a] = *backcommands[a + 1];
-                                    }
-                                    *backcommands[9] = 0;
-                                }
-                            }
-                        }
-                        x = 0;
-                        while (*backcommands[x] != 0) {
-                            printf("[%i] Proceso: %i EXECUTING\t %s\n", x, *backcommands[x], commandsname[x]);
-                            x++;
-                        }
-                        a = 0;
-                        while (*backcommandsended[a] != 0) {
-                            printf("[%i] Proceso: %i DONE\t %s\n", i, *backcommandsended[a], commandsname[i]);
-                            *backcommandsended[a] = 0;
-                            i++;
-                            a++;
-                        }
+                    } else if((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)){
+                        
 
                     } else {
                         execvp(line->commands[i].argv[0], line->commands[i].argv);
@@ -216,6 +234,7 @@ int main(void) {
                     exit(1);
                 }
             } else {//Se cierra el pipe de salida en el padre
+                
                 close(p[i][1]);
             }
         }
@@ -225,7 +244,14 @@ int main(void) {
             //signal(SIGQUIT, SIG_IGN);
             /*for (i = 0; i < line->ncommands; i++) {
                 if (i >= line->ncommands - 1) {*/
+            counter = 0;
+            while (*backcommands[counter] != 0) {
+                counter++;
+            }
             int k;
+            if (strlen(commandsname[counter]) > 0) {
+                strcpy(commandsname[counter], "");
+            }
             for (k = 0; k < line->commands->argc; k++) {
                 strcat(commandsname[counter], line->commands->argv[k]);
                 strcat(commandsname[counter], " ");
@@ -236,16 +262,24 @@ int main(void) {
         }*/
 
             //Saca la lista de comandos en ejecución y añade el nuevo a la lista
-            i = 0;
-            while (*backcommands[i] != 0) {
-                printf("Proceso [%i]: %i en ejecución en background.\n", i, *backcommands[i]);
-                i++;
+            int y = 0;
+            while (*backcommands[y] != 0) {
+                printf("Proceso [%i]: %i en ejecución en background.\n", y, *backcommands[y]);
+                y++;
             }
+            /*int x = 0;
+            while (*backcommands[x] != 0) {
+                printf("[%i] Proceso: %i EXECUTING\t %s  %i\n", x, *backcommands[x], commandsname[x]);
+                x++;
+            }*/
             for (i = 0; i <= counter; i++) {
+                //printf("%i \n",*backcommands[i]);
                 pid_t finish = waitpid(*backcommands[i], &status, WNOHANG);
-                if (finish>0) {
+
+                printf("%i  %i  %i %i\n", i, counter, *backcommands[i],finish);
+                if (finish == *backcommands[i]) {
                     if (WIFEXITED(status) != 0) {
-                        printf("Proceso %i :ha terminado %i\n", *backcommands[i],finish);
+                        printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
                         if (WEXITSTATUS(status) != 0) {
                             printf("El comando no se ejecutó correctamente\n");
                         }
@@ -254,18 +288,26 @@ int main(void) {
                             a++;
                         }
                         *backcommandsended[a] = *backcommands[i];
+                        strcpy(commandsnameended[a], commandsname[i]);
                         *backcommands[i] = 0;
                         for (a = i; a < 9; a++) {
                             *backcommands[a] = *backcommands[a + 1];
                         }
                         *backcommands[9] = 0;
+                        counter--;
                     }
                 }
             }
-            counter = 0;
-            while (*backcommands[counter] != 0) {
-                counter++;
-            }
+
+            /*int a = 0;
+            i=0;
+            while (*backcommandsended[a] != 0) {
+                printf("[%i] Proceso: %i DONE\t %s\n", i, *backcommandsended[a], commandsnameended[a]);
+             *backcommandsended[a] = 0;
+                i++;
+                a++;
+            }*/
+
         } else {
             //El padre hace el waitpid por cada uno de los hijos
             for (i = 0; i < line->ncommands; i++) {
