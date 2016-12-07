@@ -150,43 +150,48 @@ int main(void) {
                         }
                         printf("El directorio actual es: %s\n", getcwd(buffer, -1));
                     } else if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
-                        i = 0;
-                        while (*backcommands[i] != 0) {
-                            printf("[%i] Proceso: %i EXECUTING\t %s\n", i, *backcommands[i], commandsname[i]);
-                            i++;
-                        }
                         int a = 0;
+                        counter = 0;
+                        while (*backcommands[counter] != 0) {
+                            counter++;
+                        }
+                        int x;
+                        for (x = 0; x < counter; x++) {
+                            pid_t finish = waitpid(*backcommands[x], &status, WNOHANG);
+                            printf("%i\n", finish);
+                            if (finish>0) {
+                                if (WIFEXITED(status) != 0) {
+                                    if (WEXITSTATUS(status) != 0) {
+                                        printf("El comando no se ejecutó correctamente\n");
+                                    }
+                                    printf("Proceso %i :ha terminado %i\n", *backcommands[x],finish);
+
+                                    //int a = 0;
+                                    while (*backcommandsended[a] != 0) {
+                                        a++;
+                                    }
+                                    *backcommandsended[a] = *backcommands[x];
+                                    *backcommands[x] = 0;
+                                    for (a = x; a < 9; a++) {
+                                        *backcommands[a] = *backcommands[a + 1];
+                                    }
+                                    *backcommands[9] = 0;
+                                }
+                            }
+                        }
+                        x = 0;
+                        while (*backcommands[x] != 0) {
+                            printf("[%i] Proceso: %i EXECUTING\t %s\n", x, *backcommands[x], commandsname[x]);
+                            x++;
+                        }
+                        a = 0;
                         while (*backcommandsended[a] != 0) {
                             printf("[%i] Proceso: %i DONE\t %s\n", i, *backcommandsended[a], commandsname[i]);
                             *backcommandsended[a] = 0;
                             i++;
                             a++;
                         }
-                        a = 0;
-                        counter = 0;
-                        while (*backcommands[counter] != 0) {
-                            counter++;
-                        }
-                        for (i = 0; i < counter; i++) {
-                            waitpid(*backcommands[i], &status, WNOHANG);
-                            if (WIFEXITED(status) != 0) {
-                                if (WEXITSTATUS(status) != 0) {
-                                    printf("El comando no se ejecutó correctamente\n");
-                                }
-                                printf("Proceso %i :ha terminado\n", *backcommands[i]);
 
-                                //int a = 0;
-                                while (*backcommandsended[a] != 0) {
-                                    a++;
-                                }
-                                *backcommandsended[a] = *backcommands[i];
-                                *backcommands[i] = 0;
-                                for (a = i; a < 9; a++) {
-                                    *backcommands[a] = *backcommands[a + 1];
-                                }
-                                *backcommands[9] = 0;
-                            }
-                        }
                     } else {
                         execvp(line->commands[i].argv[0], line->commands[i].argv);
                         //Si llega aquí es que se ha producido un error en el execvp
@@ -237,10 +242,10 @@ int main(void) {
                 i++;
             }
             for (i = 0; i <= counter; i++) {
-                int finish = waitpid(*backcommands[i], &status, WNOHANG);
-                if (finish) {
+                pid_t finish = waitpid(*backcommands[i], &status, WNOHANG);
+                if (finish>0) {
                     if (WIFEXITED(status) != 0) {
-                        printf("Proceso %i :ha terminado \n", *backcommands[i]);
+                        printf("Proceso %i :ha terminado %i\n", *backcommands[i],finish);
                         if (WEXITSTATUS(status) != 0) {
                             printf("El comando no se ejecutó correctamente\n");
                         }
