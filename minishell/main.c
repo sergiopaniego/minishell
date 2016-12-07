@@ -12,12 +12,15 @@
 
 int main(void) {
     char buf[1024];
+    char buf2[1024];
+    int bufsize = 1024;
     tline * line;
     int i, j;
     int file;
     int status;
 
-    printf("minishell ==> ");
+    getlogin_r(buf2, bufsize);
+    printf("%s@minishell==> ", buf2);
     //signal(SIGINT, SIG_IGN);
     //signal(SIGQUIT, SIG_IGN);
     int counter = 0;
@@ -29,11 +32,11 @@ int main(void) {
     for (i = 0; i < 10; i++) {
         backcommandsended[i] = (int*) malloc(sizeof (int));
     }
-    char ** commandsname = (char**) malloc (10*sizeof(char*));
+    char ** commandsname = (char**) malloc(10 * sizeof (char*));
     for (i = 0; i < 10; i++) {
-         commandsname[i] = (char*) malloc(1024*sizeof (char*));
+        commandsname[i] = (char*) malloc(1024 * sizeof (char*));
     }
-      
+
     while (fgets(buf, 1024, stdin)) {
         //signal(SIGINT, SIG_IGN);
         //signal(SIGQUIT, SIG_IGN);
@@ -164,14 +167,14 @@ int main(void) {
                         while (*backcommands[counter] != 0) {
                             counter++;
                         }
-                        for (i = 0; i < counter; i++) { 
+                        for (i = 0; i < counter; i++) {
                             waitpid(*backcommands[i], &status, WNOHANG);
                             if (WIFEXITED(status) != 0) {
                                 if (WEXITSTATUS(status) != 0) {
                                     printf("El comando no se ejecutó correctamente\n");
                                 }
                                 printf("Proceso %i :ha terminado\n", *backcommands[i]);
-                               
+
                                 //int a = 0;
                                 while (*backcommandsended[a] != 0) {
                                     a++;
@@ -218,14 +221,14 @@ int main(void) {
             /*for (i = 0; i < line->ncommands; i++) {
                 if (i >= line->ncommands - 1) {*/
             int k;
-            for(k=0; k<line->commands->argc; k++){
+            for (k = 0; k < line->commands->argc; k++) {
                 strcat(commandsname[counter], line->commands->argv[k]);
                 strcat(commandsname[counter], " ");
             }
-                strcat(commandsname[counter], "&");
-                *backcommands[counter] = pid[0];
-                /*}
-            }*/
+            strcat(commandsname[counter], "&");
+            *backcommands[counter] = pid[0];
+            /*}
+        }*/
 
             //Saca la lista de comandos en ejecución y añade el nuevo a la lista
             i = 0;
@@ -233,42 +236,25 @@ int main(void) {
                 printf("Proceso [%i]: %i en ejecución en background.\n", i, *backcommands[i]);
                 i++;
             }
-
-            /*for (i = 0; i < line->ncommands; i++) {
-                waitpid(pid[i], &status, WNOHANG);
-                if (WIFEXITED(status) != 0){
-                    printf("Entra1\n");
-                    if (WEXITSTATUS(status) != 0){
-                        printf("El comando no se ejecutó correctamente\n");
-                    if(i>=line->ncommands-1){
-                        printf("Entra2\n"); 
-                        for(i=counter; i<9; i++){
-             *backcommands[i]=*backcommands[i+1];                           
+            for (i = 0; i <= counter; i++) {
+                int finish = waitpid(*backcommands[i], &status, WNOHANG);
+                if (finish) {
+                    if (WIFEXITED(status) != 0) {
+                        printf("Proceso %i :ha terminado \n", *backcommands[i]);
+                        if (WEXITSTATUS(status) != 0) {
+                            printf("El comando no se ejecutó correctamente\n");
                         }
-             *backcommands[9]=0;
+                        int a = 0;
+                        while (*backcommandsended[a] != 0) {
+                            a++;
+                        }
+                        *backcommandsended[a] = *backcommands[i];
+                        *backcommands[i] = 0;
+                        for (a = i; a < 9; a++) {
+                            *backcommands[a] = *backcommands[a + 1];
+                        }
+                        *backcommands[9] = 0;
                     }
-                                 
-                    
-                }
-            }*/
-          
-            for (i = 0; i < counter; i++) {
-                waitpid(*backcommands[i], &status, WNOHANG);
-                if (WIFEXITED(status) != 0) {
-                    printf("Proceso %i :ha terminado \n", *backcommands[i]);
-                    if (WEXITSTATUS(status) != 0) {
-                        printf("El comando no se ejecutó correctamente\n");
-                    }
-                    int a = 0;
-                    while (*backcommandsended[a] != 0) {
-                        a++;
-                    }
-                    *backcommandsended[a] = *backcommands[i];
-                    *backcommands[i] = 0;
-                    for (a = i; a < 9; a++) {
-                        *backcommands[a] = *backcommands[a + 1];
-                    }
-                    *backcommands[9] = 0;
                 }
             }
             counter = 0;
@@ -305,8 +291,8 @@ int main(void) {
             dup2(8, 1);
             dup2(9, 2);
         }
-
-        printf("minishell ==> ");
+        getlogin_r(buf2, bufsize);
+        printf("%s@minishell==> ", buf2);
     }
     return 0;
 }
