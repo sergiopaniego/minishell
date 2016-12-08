@@ -10,19 +10,25 @@
 #include <assert.h>
 #include <signal.h>
 
+/*
+ * 
+ *  Authors: Sergio Rivas Delgado and Sergio Paniego Blanco
+ *  Subject: Sistemas Operativos
+ *  Issue: Minishell
+ * 
+ */
+
 int main(void) {
     char buf[1024];
-    char buf2[1024];
-    int bufsize = 1024;
     tline * line;
     int i, j;
     int file;
     int status;
 
-    getlogin_r(buf2, bufsize);
-    printf("%s@minishell==> ", buf2);
-    //signal(SIGINT, SIG_IGN);
-    //signal(SIGQUIT, SIG_IGN);
+    
+    printf("%s@minishell:~$ ", getenv("USER"));
+    signal(SIGINT, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
     int counter = 0;
     int * backcommands[40];
     for (i = 0; i < 40; i++) {
@@ -44,43 +50,43 @@ int main(void) {
     }
 
     while (fgets(buf, 1024, stdin)) {
-        //signal(SIGINT, SIG_IGN);
-        //signal(SIGQUIT, SIG_IGN);
+        signal(SIGINT, SIG_IGN);
+        signal(SIGQUIT, SIG_IGN);
 
         line = tokenize(buf);
         if (line == NULL) {
             continue;
         }
         if (line->redirect_input != NULL) {
-            printf("redirección de entrada: %s\n", line->redirect_input);
+            printf("Input redirection : %s\n", line->redirect_input);
 
-            //Abrimos el fichero
+            // File open 
             int file = open(line->redirect_input, O_RDONLY | O_CREAT);
             if (file < 0) return 1;
 
-            //Redirigimos la entrada estandar al fichero
+            // Standard input redirected to file
             dup2(0, 7);
             dup2(file, 0);
         }
         if (line->redirect_output != NULL) {
-            printf("redirección de salida: %s\n", line->redirect_output);
+            printf("Output redirection : %s\n", line->redirect_output);
 
-            //Abrimos el fichero
+            // File open 
             file = open(line->redirect_output, O_WRONLY | O_CREAT | O_TRUNC);
             if (file < 0) return 1;
 
-            //Redirigimos la salida estandar al fichero
+            // Standard output redirected to file
             dup2(1, 8);
             dup2(file, 1);
         }
         if (line->redirect_error != NULL) {
-            printf("redirección de error: %s\n", line->redirect_error);
+            printf("Error redirection : %s\n", line->redirect_error);
 
-            //Abrimos el fichero
+            // File open 
             file = open(line->redirect_error, O_WRONLY | O_CREAT | O_TRUNC);
             if (file < 0) return 1;
 
-            //Redirigimos la salida de error al fichero
+            // Standard error output redirected to file
             dup2(1, 8);
             dup2(file, 1);
 
@@ -91,7 +97,7 @@ int main(void) {
         for (i = 0; i < line->ncommands; i++) {
             printf("orden %d (%s):\n", i, line->commands[i].filename);
             for (j = 0; j < line->commands[i].argc; j++) {
-                printf("  argumento %d: %s\n", j, line->commands[i].argv[j]);
+                printf("  argument %d: %s\n", j, line->commands[i].argv[j]);
             }
         }
 
@@ -103,16 +109,15 @@ int main(void) {
         int pid[line->ncommands];
         int i;
 
-        //Creo los pipes
+        // Pipes creation
         for (i = 0; i < line->ncommands; i++) {
             pipe(p[i]);
         }
 
 
-        //El padre crea los hijos y conecta los pipes
+        // Father creates children and connects pipes
         for (i = 0; i < line->ncommands; i++) {
-            //signal(SIGINT, SIG_DFL);
-            //signal(SIGQUIT, SIG_DFL);
+            
             char st2[] = "jobs";
             char st3[] = "fg";
             if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
@@ -124,15 +129,12 @@ int main(void) {
                 counter--;
 
                 for (i = 0; i <= counter; i++) {
-                    //printf("%i \n",*backcommands[i]);
                     pid_t finish = waitpid(*backcommands[i], &status, WNOHANG);
 
-                    //printf("%i  %i  %i %i\n", i, counter, *backcommands[i], finish);
                     if (finish == *backcommands[i]) {
                         if (WIFEXITED(status) != 0) {
-                            //printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
                             if (WEXITSTATUS(status) != 0) {
-                                printf("El comando no se ejecutó correctamente\n");
+                                printf("The command didn't run properly\n");
                             }
                             int a = 0;
                             while (*backcommandsended[a] != 0) {
@@ -146,7 +148,6 @@ int main(void) {
                                 *backcommands[a] = *backcommands[a + 1];
                                 strcpy(commandsname[a], commandsname[a + 1]);
                             }
-
                             *backcommands[39] = 0;
                             strcpy(commandsname[39], "");
                             counter--;
@@ -155,7 +156,7 @@ int main(void) {
                 }
                 int x = 0;
                 while (*backcommands[x] != 0) {
-                    printf("[%i] Proceso: %i EXECUTING\t %s \n", x, *backcommands[x], commandsname[x]);
+                    printf("[%i] Process: %i EXECUTING\t %s \n", x, *backcommands[x], commandsname[x]);
                     x++;
                 }
                 int a = 0;
@@ -179,11 +180,10 @@ int main(void) {
                 pid_t finish = waitpid(*backcommands[number], &status, 0);
                 if (finish == *backcommands[number]) {
                     if (WIFEXITED(status) != 0) {
-                        //printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
                         if (WEXITSTATUS(status) != 0) {
-                            printf("El comando no se ejecutó correctamente\n");
+                            printf("The command didn't run properly\n");
                         }
-                        printf("El comando  se ejecutó correctamente\n");
+                        printf("The command run properly\n");
                         int a = 0;
                         while (*backcommandsended[a] != 0) {
                             a++;
@@ -205,29 +205,32 @@ int main(void) {
             } else {
                 pid[i] = fork();
                 if (pid[i] < 0) {
-                    fprintf(stderr, "Falló el fork().\n%s\n", strerror(errno));
+                    fprintf(stderr, "fork() failed.\n%s\n", strerror(errno));
                     exit(1);
-                } else if (pid[i] == 0) {//Primer o unico hijo
+                } else if (pid[i] == 0) {
+                    // First or only child 
+                    signal(SIGINT, SIG_DFL);
+                    signal(SIGQUIT, SIG_DFL);
                     if (i == 0) {
-                        //Solo se crea el pipe si hay más de 1 hijo
+                        // Pipe created if there is more than one child
                         if (line->ncommands > 1) {
                             close(p[i][0]);
                             dup2(p[i][1], 1);
                         }
-                        //Implementacion del comando cd
+                        // Cd command implementation
                         char st[] = "cd";
                         if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st) == 0)) {
                             char *dir;
                             char buffer[512];
 
                             if (line->commands[0].argc > 2) {
-                                fprintf(stderr, "Uso: %s directorio\n", line->commands[0].argv[1]);
+                                fprintf(stderr, "Directory: %s used\n", line->commands[0].argv[1]);
                             }
 
                             if (line->commands[0].argc == 1) {
                                 dir = getenv("HOME");
                                 if (dir == NULL) {
-                                    fprintf(stderr, "No existe la variable $HOME\n");
+                                    fprintf(stderr, "$HOME variable doesn't exit\n");
                                 }
                             } else {
                                 char aux[] = "$HOME";
@@ -239,39 +242,36 @@ int main(void) {
 
                             }
 
-                            // Comprobar si es un directorio
+                            // Check if it is a directory
                             if (chdir(dir) != 0) {
-                                fprintf(stderr, "Error al cambiar de directorio: %s\n", strerror(errno));
+                                fprintf(stderr, "Changing directory fail: %s\n", strerror(errno));
                             }
-                            printf("El directorio actual es: %s\n", getcwd(buffer, -1));
-                            //} else if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
-
-
-
+                            printf("Current directory: %s\n", getcwd(buffer, -1));
+                       
                         } else {
                             execvp(line->commands[i].argv[0], line->commands[i].argv);
-                            //Si llega aquí es que se ha producido un error en el execvp
-                            printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                            // If it reachs here, execvp failed
+                            printf("Fail when command executed: %s\n", strerror(errno));
                             exit(1);
                         }
                     } else if (i == (line->ncommands - 1)) {//Ultimo hijo
                         close(p[i - 1][1]);
                         dup2(p[i - 1][0], 0);
                         execvp(line->commands[i].argv[0], line->commands[i].argv);
-                        //Si llega aquí es que se ha producido un error en el execvp
-                        printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                        // If it reachs here, execvp failed
+                        printf("Fail when command executed: %s\n", strerror(errno));
                         exit(1);
-                    } else {//Hijos intermedios 
+                    } else {// Intermediate children
                         close(p[i - 1][1]);
                         close(p[i][0]);
                         dup2(p[i - 1][0], 0);
                         dup2(p[i][1], 1);
                         execvp(line->commands[i].argv[0], line->commands[i].argv);
-                        //Si llega aquí es que se ha producido un error en el execvp
-                        printf("Error al ejecutar el comando: %s\n", strerror(errno));
+                        // If it reachs here, execvp failed
+                        printf("Fail when command executed: %s\n", strerror(errno));
                         exit(1);
                     }
-                } else {//Se cierra el pipe de salida en el padre
+                } else {// Father output pipe close
 
                     close(p[i][1]);
                 }
@@ -279,9 +279,9 @@ int main(void) {
 
         }
         if (line->background) {
-            printf("comando a ejecutarse en background\n");
-            //signal(SIGINT, SIG_IGN);
-            //signal(SIGQUIT, SIG_IGN);
+            printf("Command executing in background\n");
+            signal(SIGINT, SIG_IGN);
+            signal(SIGQUIT, SIG_IGN);
             for (i = 0; i < line->ncommands; i++) {
                 if (i >= line->ncommands - 1) {
                     counter = 0;
@@ -312,26 +312,26 @@ int main(void) {
             }
             int y = 0;
             while (*backcommands[y] != 0) {
-                printf("Proceso [%i]: %i en ejecución en background.\n", y, *backcommands[y]);
+                printf("Process [%i]: %i in background execution.\n", y, *backcommands[y]);
                 y++;
             }
         } else {
-            //El padre hace el waitpid por cada uno de los hijos
+            // Father does waitpid for each children
             for (i = 0; i < line->ncommands; i++) {
                 waitpid(pid[i], &status, 0);
                 if (WIFEXITED(status) != 0)
                     if (WEXITSTATUS(status) != 0)
-                        printf("El comando no se ejecutó correctamente\n");
+                        printf("The command didn't run properly\n");
             }
         }
 
-        //Liberamos la memoria utilizada
+        // Free used memory 
         for (i = 0; i < line->ncommands; i++) {
             free(p[i]);
         }
         free(p);
 
-        //Volvemos al estado inicial en el caso de haberse producido redirecciones
+        // Back to initial state in case of redirections
         if (line->redirect_input != NULL) {
             close(file);
             dup2(7, 0);
@@ -345,8 +345,22 @@ int main(void) {
             dup2(8, 1);
             dup2(9, 2);
         }
-        getlogin_r(buf2, bufsize);
-        printf("%s@minishell==> ", buf2);
+        printf("%s@minishell:~$ ", getenv("USER"));
     }
+    // Free used memory 
+    for( i=0; i<40; i++){
+        free(backcommands[i]);
+    }
+    for( i=0; i<40; i++){
+        free(backcommandsended[i]);
+    }
+    for( i=0; i<40; i++){
+        free(commandsname[i]);
+    }
+    free(commandsname);
+    for( i=0; i<40; i++){
+        free(commandsnameended[i]);
+    }
+    free(commandsnameended);
     return 0;
 }
