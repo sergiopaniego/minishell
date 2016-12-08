@@ -95,7 +95,7 @@ int main(void) {
             dup2(file, 2);
         }
 
-        int ** p = (int**) malloc(line->ncommands * sizeof (int*));
+        int ** p = (int**) malloc((line->ncommands-1) * sizeof (int*));
         for (i = 0; i < line->ncommands; i++) {
             p[i] = (int*) malloc(2 * sizeof (int));
         }
@@ -328,7 +328,7 @@ int main(void) {
         }
 
         // Free used memory 
-        for (i = 0; i < line->ncommands; i++) {
+        for (i = 0; i < line->ncommands-1; i++) {
             free(p[i]);
         }
         free(p);
