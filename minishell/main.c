@@ -114,6 +114,7 @@ int main(void) {
             //signal(SIGINT, SIG_DFL);
             //signal(SIGQUIT, SIG_DFL);
             char st2[] = "jobs";
+            char st3[] = "fg";
             if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
 
                 counter = 0;
@@ -126,10 +127,10 @@ int main(void) {
                     //printf("%i \n",*backcommands[i]);
                     pid_t finish = waitpid(*backcommands[i], &status, WNOHANG);
 
-                    printf("%i  %i  %i %i\n", i, counter, *backcommands[i], finish);
+                    //printf("%i  %i  %i %i\n", i, counter, *backcommands[i], finish);
                     if (finish == *backcommands[i]) {
                         if (WIFEXITED(status) != 0) {
-                            printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
+                            //printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
                             if (WEXITSTATUS(status) != 0) {
                                 printf("El comando no se ejecutó correctamente\n");
                             }
@@ -145,7 +146,7 @@ int main(void) {
                                 *backcommands[a] = *backcommands[a + 1];
                                 strcpy(commandsname[a], commandsname[a + 1]);
                             }
-                            
+
                             *backcommands[39] = 0;
                             strcpy(commandsname[39], "");
                             counter--;
@@ -165,6 +166,42 @@ int main(void) {
                     i++;
                     a++;
                 }
+            } else if ((strcmp(line->commands[0].argv[0], st3) == 0)) {
+                int number;
+                if (line->commands[0].argv[1] != NULL) {
+                    number =  atoi(line->commands[0].argv[1]);
+                } else {
+                    number = 0;
+                }
+
+                
+                printf("[%i] Process: %i EXECUTING in foreground\t %s \n", number, *backcommands[number], commandsname[number]);
+                pid_t finish = waitpid(*backcommands[number], &status, 0);
+                if (finish == *backcommands[number]) {
+                    if (WIFEXITED(status) != 0) {
+                        //printf("Proceso %i :ha terminado %i\n", *backcommands[i], finish);
+                        if (WEXITSTATUS(status) != 0) {
+                            printf("El comando no se ejecutó correctamente\n");
+                        }
+                        printf("El comando  se ejecutó correctamente\n");
+                        int a = 0;
+                        while (*backcommandsended[a] != 0) {
+                            a++;
+                        }
+                        *backcommandsended[a] = *backcommands[i];
+                        strcpy(commandsnameended[a], commandsname[i]);
+                        strcpy(commandsname[i], "");
+                        *backcommands[i] = 0;
+                        for (a = i; a < 39; a++) {
+                            *backcommands[a] = *backcommands[a + 1];
+                            strcpy(commandsname[a], commandsname[a + 1]);
+                        }
+
+                        *backcommands[39] = 0;
+                        strcpy(commandsname[39], "");
+
+                    }
+                } 
             } else {
                 pid[i] = fork();
                 if (pid[i] < 0) {
@@ -208,6 +245,7 @@ int main(void) {
                             }
                             printf("El directorio actual es: %s\n", getcwd(buffer, -1));
                             //} else if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
+
 
 
                         } else {
@@ -256,14 +294,14 @@ int main(void) {
                     }
                     int x;
                     for (k = 0; k < line->ncommands; k++) {
-                        for (x = 0; x < line->commands[k].argc; x++){
-                            
+                        for (x = 0; x < line->commands[k].argc; x++) {
+
                             strcat(commandsname[counter], line->commands[k].argv[x]);
                             strcat(commandsname[counter], " ");
                         }
-                        if(k < line->ncommands-1){
+                        if (k < line->ncommands - 1) {
                             strcat(commandsname[counter], " | ");
-                        }else{
+                        } else {
                             strcat(commandsname[counter], " ");
                         }
                     }
