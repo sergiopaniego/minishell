@@ -21,9 +21,10 @@
 int main(void) {
     char buf[1024];
     tline * line;
-    int i, j;
+    int i;
     int file;
     int status;
+
 
 
     printf("%s@minishell:~$ ", getenv("USER"));
@@ -92,13 +93,6 @@ int main(void) {
 
             dup2(2, 9);
             dup2(file, 2);
-        }
-
-        for (i = 0; i < line->ncommands; i++) {
-            printf("orden %d (%s):\n", i, line->commands[i].filename);
-            for (j = 0; j < line->commands[i].argc; j++) {
-                printf("  argument %d: %s\n", j, line->commands[i].argv[j]);
-            }
         }
 
         int ** p = (int**) malloc(line->ncommands * sizeof (int*));
@@ -285,41 +279,43 @@ int main(void) {
 
         }
         if (line->background) {
-            printf("Command executing in background\n");
-            signal(SIGINT, SIG_IGN);
-            signal(SIGQUIT, SIG_IGN);
-            for (i = 0; i < line->ncommands; i++) {
-                if (i >= line->ncommands - 1) {
-                    counter = 0;
-                    while (*backcommands[counter] != 0) {
-                        counter++;
-                    }
-                    int k;
-                    if (strlen(commandsname[counter]) > 0) {
-                        strcpy(commandsname[counter], "");
-                    }
-                    int x;
-                    for (k = 0; k < line->ncommands; k++) {
-                        for (x = 0; x < line->commands[k].argc; x++) {
+            if (line->commands->filename != NULL) {
+                printf("Command executing in background\n");
+                signal(SIGINT, SIG_IGN);
+                signal(SIGQUIT, SIG_IGN);
+                for (i = 0; i < line->ncommands; i++) {
+                    if (i >= line->ncommands - 1) {
+                        counter = 0;
+                        while (*backcommands[counter] != 0) {
+                            counter++;
+                        }
+                        int k;
+                        if (strlen(commandsname[counter]) > 0) {
+                            strcpy(commandsname[counter], "");
+                        }
+                        int x;
+                        for (k = 0; k < line->ncommands; k++) {
+                            for (x = 0; x < line->commands[k].argc; x++) {
 
-                            strcat(commandsname[counter], line->commands[k].argv[x]);
-                            strcat(commandsname[counter], " ");
+                                strcat(commandsname[counter], line->commands[k].argv[x]);
+                                strcat(commandsname[counter], " ");
+                            }
+                            if (k < line->ncommands - 1) {
+                                strcat(commandsname[counter], " | ");
+                            } else {
+                                strcat(commandsname[counter], " ");
+                            }
                         }
-                        if (k < line->ncommands - 1) {
-                            strcat(commandsname[counter], " | ");
-                        } else {
-                            strcat(commandsname[counter], " ");
-                        }
+                        strcat(commandsname[counter], "&");
+                        *backcommands[counter] = pid[0];
                     }
-                    strcat(commandsname[counter], "&");
-                    *backcommands[counter] = pid[0];
+
                 }
-
-            }
-            int y = 0;
-            while (*backcommands[y] != 0) {
-                printf("Process [%i]: %i in background execution.\n", y, *backcommands[y]);
-                y++;
+                int y = 0;
+                while (*backcommands[y] != 0) {
+                    printf("Process [%i]: %i in background execution.\n", y, *backcommands[y]);
+                    y++;
+                }
             }
         } else {
             // Father does waitpid for each children
