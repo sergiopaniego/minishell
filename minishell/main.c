@@ -120,6 +120,7 @@ int main(void) {
             
             char st2[] = "jobs";
             char st3[] = "fg";
+            char st4[] = "exit";
             if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st2) == 0)) {
 
                 counter = 0;
@@ -203,6 +204,8 @@ int main(void) {
 
                     }
                 } 
+            }else if ((strcmp(line->commands[0].argv[0], st4) == 0)) {
+                kill(0, SIGTERM);
             } else {
                 pid[i] = fork();
                 if (pid[i] < 0) {
