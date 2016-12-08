@@ -25,7 +25,7 @@ int main(void) {
     int file;
     int status;
 
-    
+
     printf("%s@minishell:~$ ", getenv("USER"));
     signal(SIGINT, SIG_IGN);
     signal(SIGQUIT, SIG_IGN);
@@ -117,7 +117,7 @@ int main(void) {
 
         // Father creates children and connects pipes
         for (i = 0; i < line->ncommands; i++) {
-            
+
             char st2[] = "jobs";
             char st3[] = "fg";
             char st4[] = "exit";
@@ -171,40 +171,42 @@ int main(void) {
             } else if ((strcmp(line->commands[0].argv[0], st3) == 0)) {
                 int number;
                 if (line->commands[0].argv[1] != NULL) {
-                    number =  atoi(line->commands[0].argv[1]);
+                    number = atoi(line->commands[0].argv[1]);
                 } else {
                     number = 0;
                 }
 
-                
-                printf("[%i] Process: %i EXECUTING in foreground\t %s \n", number, *backcommands[number], commandsname[number]);
-                pid_t finish = waitpid(*backcommands[number], &status, 0);
-                if (finish == *backcommands[number]) {
-                    if (WIFEXITED(status) != 0) {
-                        if (WEXITSTATUS(status) != 0) {
-                            printf("The command didn't run properly\n");
-                        }
-                        printf("The command run properly\n");
-                        int a = 0;
-                        while (*backcommandsended[a] != 0) {
-                            a++;
-                        }
-                        *backcommands[number]=0;
-                        *backcommandsended[a] = *backcommands[i];
-                        strcpy(commandsnameended[a], commandsname[i]);
-                        strcpy(commandsname[i], "");
-                        *backcommands[i] = 0;
-                        for (a = i; a < 39; a++) {
-                            *backcommands[a] = *backcommands[a + 1];
-                            strcpy(commandsname[a], commandsname[a + 1]);
-                        }
+                if (*backcommands[number] != 0) {
+                    printf("[%i] Process: %i EXECUTING in foreground\t %s \n", number, *backcommands[number], commandsname[number]);
+                    pid_t finish = waitpid(*backcommands[number], &status, 0);
+                    if (finish == *backcommands[number]) {
+                        if (WIFEXITED(status) != 0) {
+                            if (WEXITSTATUS(status) != 0) {
+                                printf("The command didn't run properly\n");
+                            }
+                            printf("The command ran properly\n");
+                            int a = 0;
+                            while (*backcommandsended[a] != 0) {
+                                a++;
+                            }
+                            *backcommands[number] = 0;
+                            *backcommandsended[a] = *backcommands[i];
+                            strcpy(commandsnameended[a], commandsname[i]);
+                            strcpy(commandsname[i], "");
+                            *backcommands[i] = 0;
+                            for (a = i; a < 39; a++) {
+                                *backcommands[a] = *backcommands[a + 1];
+                                strcpy(commandsname[a], commandsname[a + 1]);
+                            }
 
-                        *backcommands[39] = 0;
-                        strcpy(commandsname[39], "");
+                            *backcommands[39] = 0;
+                            strcpy(commandsname[39], "");
 
+                        }
                     }
-                } 
-            }else if ((strcmp(line->commands[0].argv[0], st4) == 0)) {
+                }
+
+            } else if ((strcmp(line->commands[0].argv[0], st4) == 0)) {
                 kill(0, SIGTERM);
             } else {
                 pid[i] = fork();
@@ -251,7 +253,7 @@ int main(void) {
                                 fprintf(stderr, "Changing directory fail: %s\n", strerror(errno));
                             }
                             printf("Current directory: %s\n", getcwd(buffer, -1));
-                       
+
                         } else {
                             execvp(line->commands[i].argv[0], line->commands[i].argv);
                             // If it reachs here, execvp failed
@@ -352,17 +354,17 @@ int main(void) {
         printf("%s@minishell:~$ ", getenv("USER"));
     }
     // Free used memory 
-    for( i=0; i<40; i++){
+    for (i = 0; i < 40; i++) {
         free(backcommands[i]);
     }
-    for( i=0; i<40; i++){
+    for (i = 0; i < 40; i++) {
         free(backcommandsended[i]);
     }
-    for( i=0; i<40; i++){
+    for (i = 0; i < 40; i++) {
         free(commandsname[i]);
     }
     free(commandsname);
-    for( i=0; i<40; i++){
+    for (i = 0; i < 40; i++) {
         free(commandsnameended[i]);
     }
     free(commandsnameended);
