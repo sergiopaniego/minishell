@@ -188,6 +188,7 @@ int main(void) {
                         while (*backcommandsended[a] != 0) {
                             a++;
                         }
+                        *backcommands[number]=0;
                         *backcommandsended[a] = *backcommands[i];
                         strcpy(commandsnameended[a], commandsname[i]);
                         strcpy(commandsname[i], "");
