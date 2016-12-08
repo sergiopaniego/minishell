@@ -145,7 +145,7 @@ int main(void) {
                                 *backcommands[a] = *backcommands[a + 1];
                                 strcpy(commandsname[a], commandsname[a + 1]);
                             }
-                            printf("LLEGA\n");
+                            
                             *backcommands[39] = 0;
                             strcpy(commandsname[39], "");
                             counter--;
@@ -179,7 +179,6 @@ int main(void) {
                         }
                         //Implementacion del comando cd
                         char st[] = "cd";
-                        char st2[] = "jobs";
                         if ((line->ncommands == 1)&&(strcmp(line->commands[0].argv[0], st) == 0)) {
                             char *dir;
                             char buffer[512];
@@ -245,32 +244,39 @@ int main(void) {
             printf("comando a ejecutarse en background\n");
             //signal(SIGINT, SIG_IGN);
             //signal(SIGQUIT, SIG_IGN);
-            /*for (i = 0; i < line->ncommands; i++) {
-                if (i >= line->ncommands - 1) {*/
-            counter = 0;
-            while (*backcommands[counter] != 0) {
-                counter++;
-            }
-            int k;
-            if (strlen(commandsname[counter]) > 0) {
-                strcpy(commandsname[counter], "");
-            }
-            for (k = 0; k < line->commands->argc; k++) {
-                strcat(commandsname[counter], line->commands->argv[k]);
-                strcat(commandsname[counter], " ");
-            }
-            strcat(commandsname[counter], "&");
-            *backcommands[counter] = pid[0];
-            /*}
-        }*/
+            for (i = 0; i < line->ncommands; i++) {
+                if (i >= line->ncommands - 1) {
+                    counter = 0;
+                    while (*backcommands[counter] != 0) {
+                        counter++;
+                    }
+                    int k;
+                    if (strlen(commandsname[counter]) > 0) {
+                        strcpy(commandsname[counter], "");
+                    }
+                    int x;
+                    for (k = 0; k < line->ncommands; k++) {
+                        for (x = 0; x < line->commands[k].argc; x++){
+                            
+                            strcat(commandsname[counter], line->commands[k].argv[x]);
+                            strcat(commandsname[counter], " ");
+                        }
+                        if(k < line->ncommands-1){
+                            strcat(commandsname[counter], " | ");
+                        }else{
+                            strcat(commandsname[counter], " ");
+                        }
+                    }
+                    strcat(commandsname[counter], "&");
+                    *backcommands[counter] = pid[0];
+                }
 
-            //Saca la lista de comandos en ejecución y añade el nuevo a la lista
+            }
             int y = 0;
             while (*backcommands[y] != 0) {
                 printf("Proceso [%i]: %i en ejecución en background.\n", y, *backcommands[y]);
                 y++;
             }
-
         } else {
             //El padre hace el waitpid por cada uno de los hijos
             for (i = 0; i < line->ncommands; i++) {
